@@ -1,0 +1,60 @@
+import { Link } from "react-router-dom";
+
+const Footer = () => {
+  return (
+    <footer className="border-t bg-card">
+      <div className="container py-12">
+        <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-4">
+          {/* Brand */}
+          <div>
+            <Link to="/" className="flex items-center gap-2">
+              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary">
+                <span className="font-display text-sm font-bold text-primary-foreground">L</span>
+              </div>
+              <span className="font-display text-lg font-bold text-foreground">
+                Lab<span className="text-primary">Setu</span>
+              </span>
+            </Link>
+            <p className="mt-3 text-sm text-muted-foreground">
+              India's trusted platform for comparing diagnostic labs and booking tests at the best prices.
+            </p>
+          </div>
+
+          {/* Quick Links */}
+          <div>
+            <h4 className="font-display text-sm font-semibold text-foreground">Quick Links</h4>
+            <ul className="mt-3 space-y-2">
+              <li><Link to="/search" className="text-sm text-muted-foreground hover:text-primary">Find Tests</Link></li>
+              <li><Link to="/about" className="text-sm text-muted-foreground hover:text-primary">About Us</Link></li>
+              <li><Link to="/contact" className="text-sm text-muted-foreground hover:text-primary">Contact</Link></li>
+            </ul>
+          </div>
+
+          {/* For Labs */}
+          <div>
+            <h4 className="font-display text-sm font-semibold text-foreground">For Labs</h4>
+            <ul className="mt-3 space-y-2">
+              <li><Link to="/register" className="text-sm text-muted-foreground hover:text-primary">Partner With Us</Link></li>
+              <li><Link to="/login" className="text-sm text-muted-foreground hover:text-primary">Lab Login</Link></li>
+            </ul>
+          </div>
+
+          {/* Legal */}
+          <div>
+            <h4 className="font-display text-sm font-semibold text-foreground">Legal</h4>
+            <ul className="mt-3 space-y-2">
+              <li><Link to="/privacy" className="text-sm text-muted-foreground hover:text-primary">Privacy Policy</Link></li>
+              <li><Link to="/terms" className="text-sm text-muted-foreground hover:text-primary">Terms of Service</Link></li>
+            </ul>
+          </div>
+        </div>
+
+        <div className="mt-10 border-t pt-6 text-center text-xs text-muted-foreground">
+          © {new Date().getFullYear()} LabSetu. All rights reserved.
+        </div>
+      </div>
+    </footer>
+  );
+};
+
+export default Footer;
