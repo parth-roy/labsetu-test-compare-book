@@ -1,4 +1,5 @@
 import { Link } from "react-router-dom";
+import { Phone, Mail, MapPin } from "lucide-react";
 
 const Footer = () => {
   return (
@@ -26,16 +27,23 @@ const Footer = () => {
             <ul className="mt-3 space-y-2">
               <li><Link to="/search" className="text-sm text-muted-foreground hover:text-primary">Find Tests</Link></li>
               <li><Link to="/about" className="text-sm text-muted-foreground hover:text-primary">About Us</Link></li>
-              <li><Link to="/contact" className="text-sm text-muted-foreground hover:text-primary">Contact</Link></li>
+              <li><Link to="/login" className="text-sm text-muted-foreground hover:text-primary">Login</Link></li>
+              <li><Link to="/register" className="text-sm text-muted-foreground hover:text-primary">Sign Up</Link></li>
             </ul>
           </div>
 
-          {/* For Labs */}
+          {/* Contact Us */}
           <div>
-            <h4 className="font-display text-sm font-semibold text-foreground">For Labs</h4>
-            <ul className="mt-3 space-y-2">
-              <li><Link to="/register" className="text-sm text-muted-foreground hover:text-primary">Partner With Us</Link></li>
-              <li><Link to="/login" className="text-sm text-muted-foreground hover:text-primary">Lab Login</Link></li>
+            <h4 className="font-display text-sm font-semibold text-foreground">Contact Us</h4>
+            <ul className="mt-3 space-y-3">
+              <li className="flex items-center gap-2">
+                <Phone className="h-4 w-4 text-primary" />
+                <a href="tel:9330490777" className="text-sm text-muted-foreground hover:text-primary">9330490777</a>
+              </li>
+              <li className="flex items-center gap-2">
+                <Mail className="h-4 w-4 text-primary" />
+                <a href="mailto:parthroy852@gmail.com" className="text-sm text-muted-foreground hover:text-primary">parthroy852@gmail.com</a>
+              </li>
             </ul>
           </div>
 
