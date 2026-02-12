@@ -7,8 +7,8 @@ interface AuthContextType {
   session: Session | null;
   loading: boolean;
   role: string | null;
-  signUp: (email: string, password: string, fullName: string, role?: string) => Promise<{ error: any }>;
-  signIn: (email: string, password: string) => Promise<{ error: any }>;
+  sendOtp: (phone: string) => Promise<{ error: any }>;
+  verifyOtp: (phone: string, otp: string, fullName?: string, role?: string) => Promise<{ error: any }>;
   signOut: () => Promise<void>;
 }
 
@@ -53,21 +53,38 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     return () => subscription.unsubscribe();
   }, []);
 
-  const signUp = async (email: string, password: string, fullName: string, role: string = "patient") => {
-    const { error } = await supabase.auth.signUp({
-      email,
-      password,
-      options: {
-        data: { full_name: fullName, role },
-        emailRedirectTo: window.location.origin,
-      },
-    });
-    return { error };
+  const sendOtp = async (phone: string) => {
+    try {
+      const res = await supabase.functions.invoke("send-otp", {
+        body: { phone },
+      });
+      if (res.error) return { error: res.error };
+      return { error: null };
+    } catch (err: any) {
+      return { error: err };
+    }
   };
 
-  const signIn = async (email: string, password: string) => {
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
-    return { error };
+  const verifyOtp = async (phone: string, otp: string, fullName?: string, role?: string) => {
+    try {
+      const res = await supabase.functions.invoke("verify-otp", {
+        body: { phone, otp, fullName, role },
+      });
+      if (res.error) return { error: res.error };
+      const data = res.data;
+      if (data?.error) return { error: { message: data.error } };
+      
+      // Set session from the response
+      if (data?.session) {
+        await supabase.auth.setSession({
+          access_token: data.session.access_token,
+          refresh_token: data.session.refresh_token,
+        });
+      }
+      return { error: null };
+    } catch (err: any) {
+      return { error: err };
+    }
   };
 
   const signOut = async () => {
@@ -75,7 +92,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   };
 
   return (
-    <AuthContext.Provider value={{ user, session, loading, role, signUp, signIn, signOut }}>
+    <AuthContext.Provider value={{ user, session, loading, role, sendOtp, verifyOtp, signOut }}>
       {children}
     </AuthContext.Provider>
   );
