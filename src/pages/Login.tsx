@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import Layout from "@/components/layout/Layout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -8,7 +8,8 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
-import { Phone, Shield } from "lucide-react";
+import { Shield } from "lucide-react";
+import labsetuLogo from "@/assets/labsetu-logo.png";
 
 const Login = () => {
   const [phone, setPhone] = useState("");
@@ -57,12 +58,10 @@ const Login = () => {
       <div className="flex min-h-[60vh] items-center justify-center py-12">
         <Card className="w-full max-w-md">
           <CardHeader className="text-center">
-            <div className="mx-auto mb-2 flex h-12 w-12 items-center justify-center rounded-xl bg-primary">
-              <Phone className="h-6 w-6 text-primary-foreground" />
-            </div>
+            <img src={labsetuLogo} alt="LabSetu" className="mx-auto mb-3 h-12 w-auto" />
             <CardTitle className="font-display text-2xl">Login / Sign Up</CardTitle>
             <CardDescription>Enter your mobile number to continue</CardDescription>
-            <div className="mt-2 flex items-center justify-center gap-1 rounded-md bg-accent/50 px-3 py-1.5 text-xs text-muted-foreground">
+            <div className="mt-2 flex items-center justify-center gap-1 rounded-md bg-accent/20 px-3 py-1.5 text-xs text-muted-foreground">
               <Shield className="h-3 w-3" />
               Test Mode: OTP is always 123456
             </div>
