@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Menu, X } from "lucide-react";
 import { useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
+import labsetuLogo from "@/assets/labsetu-logo.png";
 
 const Header = () => {
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -20,19 +21,14 @@ const Header = () => {
     <header className="sticky top-0 z-50 border-b bg-card/80 backdrop-blur-lg">
       <div className="container flex h-16 items-center justify-between">
         <Link to="/" className="flex items-center gap-2">
-          <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary">
-            <span className="font-display text-lg font-bold text-primary-foreground">L</span>
-          </div>
-          <span className="font-display text-xl font-bold text-foreground">
-            Lab<span className="text-primary">Setu</span>
-          </span>
+          <img src={labsetuLogo} alt="LabSetu" className="h-9 w-auto" />
         </Link>
 
         <nav className="hidden items-center gap-1 md:flex">
-          <Link to="/" className="px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground">Home</Link>
-          <Link to="/search" className="px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground">Find Tests</Link>
-          {user && <Link to="/my-bookings" className="px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground">My Bookings</Link>}
-          {role === "admin" && <Link to="/admin" className="px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground">Admin</Link>}
+          <Link to="/" className="px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:text-primary">Home</Link>
+          <Link to="/search" className="px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:text-primary">Find Tests</Link>
+          {user && <Link to="/my-bookings" className="px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:text-primary">My Bookings</Link>}
+          {role === "admin" && <Link to="/admin" className="px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:text-primary">Admin</Link>}
         </nav>
 
         <div className="hidden items-center gap-2 md:flex">

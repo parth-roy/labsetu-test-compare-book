@@ -2,18 +2,29 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Search } from "lucide-react";
+import { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import labsetuLogo from "@/assets/labsetu-logo.png";
 
 const HeroSection = () => {
+  const [query, setQuery] = useState("");
+  const navigate = useNavigate();
+
+  const handleSearch = () => {
+    navigate(`/search${query ? `?q=${encodeURIComponent(query)}` : ""}`);
+  };
+
   return (
-    <section className="relative overflow-hidden bg-gradient-to-br from-primary/5 via-background to-accent/5 py-20 lg:py-28">
+    <section className="relative overflow-hidden bg-gradient-to-br from-primary/8 via-background to-success/5 py-20 lg:py-28">
       <div className="container relative z-10">
         <div className="mx-auto max-w-2xl text-center">
+          <img src={labsetuLogo} alt="LabSetu" className="mx-auto mb-6 h-16 w-auto" />
           <Badge variant="secondary" className="mb-4 px-4 py-1.5 font-medium">
             🏥 Trusted by 10,000+ patients
           </Badge>
           <h1 className="font-display text-4xl font-extrabold tracking-tight text-foreground sm:text-5xl lg:text-6xl">
-            Let's find you{" "}
-            <span className="text-primary">the Best Lab</span>
+            Compare Labs,{" "}
+            <span className="bg-gradient-to-r from-primary to-success bg-clip-text text-transparent">Save More</span>
           </h1>
           <p className="mt-4 text-lg text-muted-foreground">
             Compare diagnostic labs, book tests at lowest prices, and get reports — all from one platform.
@@ -22,9 +33,15 @@ const HeroSection = () => {
           <div className="mx-auto mt-8 flex max-w-lg gap-2">
             <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-              <Input placeholder="Search tests, e.g. CBC, Thyroid..." className="h-12 pl-10 text-base" />
+              <Input
+                placeholder="Search tests, e.g. CBC, Thyroid..."
+                className="h-12 pl-10 text-base"
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                onKeyDown={(e) => e.key === "Enter" && handleSearch()}
+              />
             </div>
-            <Button size="lg" className="h-12 px-6">Search</Button>
+            <Button size="lg" className="h-12 px-6" onClick={handleSearch}>Search</Button>
           </div>
 
           <div className="mt-4 flex flex-wrap justify-center gap-4 text-sm text-muted-foreground">
@@ -41,7 +58,7 @@ const HeroSection = () => {
       </div>
 
       <div className="pointer-events-none absolute -top-24 left-1/2 h-96 w-96 -translate-x-1/2 rounded-full bg-primary/10 blur-3xl" />
-      <div className="pointer-events-none absolute -bottom-24 right-0 h-72 w-72 rounded-full bg-accent/10 blur-3xl" />
+      <div className="pointer-events-none absolute -bottom-24 right-0 h-72 w-72 rounded-full bg-success/10 blur-3xl" />
     </section>
   );
 };

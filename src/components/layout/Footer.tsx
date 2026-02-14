@@ -1,5 +1,6 @@
 import { Link } from "react-router-dom";
-import { Phone, Mail, MapPin } from "lucide-react";
+import { Phone, Mail } from "lucide-react";
+import labsetuLogo from "@/assets/labsetu-logo.png";
 
 const Footer = () => {
   return (
@@ -9,12 +10,7 @@ const Footer = () => {
           {/* Brand */}
           <div>
             <Link to="/" className="flex items-center gap-2">
-              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary">
-                <span className="font-display text-sm font-bold text-primary-foreground">L</span>
-              </div>
-              <span className="font-display text-lg font-bold text-foreground">
-                Lab<span className="text-primary">Setu</span>
-              </span>
+              <img src={labsetuLogo} alt="LabSetu" className="h-8 w-auto" />
             </Link>
             <p className="mt-3 text-sm text-muted-foreground">
               India's trusted platform for comparing diagnostic labs and booking tests at the best prices.
@@ -28,7 +24,6 @@ const Footer = () => {
               <li><Link to="/search" className="text-sm text-muted-foreground hover:text-primary">Find Tests</Link></li>
               <li><Link to="/about" className="text-sm text-muted-foreground hover:text-primary">About Us</Link></li>
               <li><Link to="/login" className="text-sm text-muted-foreground hover:text-primary">Login</Link></li>
-              <li><Link to="/register" className="text-sm text-muted-foreground hover:text-primary">Sign Up</Link></li>
             </ul>
           </div>
 
