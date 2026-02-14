@@ -8,7 +8,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, LineChart, Line } from "recharts";
 import { Users, FlaskConical, Calendar, CreditCard, TrendingUp, Download } from "lucide-react";
 
-const COLORS = ["#2563eb", "#10b981", "#f59e0b", "#ef4444", "#8b5cf6", "#06b6d4"];
+const COLORS = ["#1d6ce0", "#0d9668", "#e88c0a", "#dc3545", "#7c4dff", "#0891b2"];
 
 const AdminDashboard = () => {
   const { user, role } = useAuth();
@@ -96,16 +96,18 @@ const AdminDashboard = () => {
         {/* KPI Cards */}
         <div className="mb-8 grid grid-cols-2 gap-4 md:grid-cols-4">
           {[
-            { label: "Total Bookings", value: stats.totalBookings, icon: Calendar, color: "text-primary" },
-            { label: "Revenue", value: `₹${stats.totalRevenue.toLocaleString()}`, icon: CreditCard, color: "text-green-600" },
-            { label: "Labs", value: stats.totalLabs, icon: FlaskConical, color: "text-orange-500" },
-            { label: "Events Tracked", value: events.length, icon: TrendingUp, color: "text-purple-500" },
+            { label: "Total Bookings", value: stats.totalBookings, icon: Calendar, color: "text-primary", bg: "bg-primary/10" },
+            { label: "Revenue", value: `₹${stats.totalRevenue.toLocaleString()}`, icon: CreditCard, color: "text-success", bg: "bg-success/10" },
+            { label: "Labs", value: stats.totalLabs, icon: FlaskConical, color: "text-warning", bg: "bg-warning/10" },
+            { label: "Events Tracked", value: events.length, icon: TrendingUp, color: "text-accent", bg: "bg-accent/10" },
           ].map((kpi) => (
-            <Card key={kpi.label}>
+            <Card key={kpi.label} className="border-none shadow-sm">
               <CardContent className="flex items-center gap-3 p-4">
-                <kpi.icon className={`h-8 w-8 ${kpi.color}`} />
+                <div className={`flex h-12 w-12 items-center justify-center rounded-xl ${kpi.bg}`}>
+                  <kpi.icon className={`h-6 w-6 ${kpi.color}`} />
+                </div>
                 <div>
-                  <p className="text-sm text-muted-foreground">{kpi.label}</p>
+                  <p className="text-xs font-medium text-muted-foreground">{kpi.label}</p>
                   <p className="text-2xl font-bold">{kpi.value}</p>
                 </div>
               </CardContent>
@@ -124,7 +126,7 @@ const AdminDashboard = () => {
                   <XAxis dataKey="date" />
                   <YAxis />
                   <Tooltip />
-                  <Line type="monotone" dataKey="count" stroke="#2563eb" strokeWidth={2} />
+                  <Line type="monotone" dataKey="count" stroke="hsl(213 94% 48%)" strokeWidth={2} dot={{ fill: "hsl(213 94% 48%)", r: 4 }} />
                 </LineChart>
               </ResponsiveContainer>
             </CardContent>
@@ -153,7 +155,7 @@ const AdminDashboard = () => {
                   <XAxis dataKey="name" />
                   <YAxis />
                   <Tooltip />
-                  <Bar dataKey="revenue" fill="#2563eb" radius={[4, 4, 0, 0]} />
+                  <Bar dataKey="revenue" fill="hsl(152 69% 41%)" radius={[6, 6, 0, 0]} />
                 </BarChart>
               </ResponsiveContainer>
             </CardContent>

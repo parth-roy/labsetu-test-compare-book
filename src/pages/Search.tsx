@@ -6,7 +6,8 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { supabase } from "@/integrations/supabase/client";
-import { Search as SearchIcon, Star, Clock, Home, FlaskConical, ArrowUpDown } from "lucide-react";
+import { Search as SearchIcon, Star, Clock, Home, FlaskConical, ArrowUpDown, ShoppingCart, Check } from "lucide-react";
+import { useCart } from "@/hooks/useCart";
 
 interface LabTest {
   id: string;
@@ -23,6 +24,7 @@ const Search = () => {
   const [sortBy, setSortBy] = useState("price");
   const [filterHome, setFilterHome] = useState(false);
   const [compareList, setCompareList] = useState<string[]>([]);
+  const { addItem, isInCart } = useCart();
 
   const searchTests = async () => {
     setLoading(true);
@@ -186,9 +188,24 @@ const Search = () => {
                       <Button variant="outline" size="sm" onClick={() => toggleCompare(item.id)}>
                         {compareList.includes(item.id) ? "Remove" : "Compare"}
                       </Button>
-                      <Button size="sm" asChild>
-                        <a href={`/book/${item.id}`}>Book Now</a>
-                      </Button>
+                      {isInCart(item.id) ? (
+                        <Button size="sm" variant="secondary" disabled className="gap-1">
+                          <Check className="h-3 w-3" /> Added
+                        </Button>
+                      ) : (
+                        <Button size="sm" className="gap-1" onClick={() => addItem({
+                          id: item.labs?.id || "",
+                          labTestId: item.id,
+                          testName: item.tests?.name || "",
+                          labName: item.labs?.name || "",
+                          labCity: item.labs?.city || "",
+                          price: item.price,
+                          turnaroundHours: item.turnaround_hours,
+                          homeCollection: item.labs?.home_collection || false,
+                        })}>
+                          <ShoppingCart className="h-3 w-3" /> Add
+                        </Button>
+                      )}
                     </div>
                   </div>
                 </CardContent>
