@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Menu, X } from "lucide-react";
 import { useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
+import CartSidebar from "@/components/cart/CartSidebar";
 import labsetuLogo from "@/assets/labsetu-logo.png";
 
 const Header = () => {
@@ -32,6 +33,7 @@ const Header = () => {
         </nav>
 
         <div className="hidden items-center gap-2 md:flex">
+          <CartSidebar />
           {user ? (
             <>
               <span className="text-sm text-muted-foreground">{phone}</span>
