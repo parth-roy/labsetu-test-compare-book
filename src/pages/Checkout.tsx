@@ -11,6 +11,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useCart } from "@/hooks/useCart";
 import { useToast } from "@/hooks/use-toast";
+import RazorpayModal from "@/components/checkout/RazorpayModal";
 import { CheckCircle, ShoppingCart, CreditCard, Calendar } from "lucide-react";
 
 const Checkout = () => {
@@ -32,6 +33,7 @@ const Checkout = () => {
   const [gstEnabled, setGstEnabled] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [paymentDone, setPaymentDone] = useState(false);
+  const [razorpayOpen, setRazorpayOpen] = useState(false);
 
   if (!user) {
     return (
@@ -68,7 +70,7 @@ const Checkout = () => {
       .eq("is_active", true)
       .single();
     if (data) {
-      const disc = data.discount_percent ? (totalPrice * data.discount_percent) / 100 : data.discount_flat || 0;
+      const disc = data.discount_percent ? (totalPrice * Number(data.discount_percent)) / 100 : Number(data.discount_flat) || 0;
       setDiscount(disc);
       toast({ title: "Discount applied!", description: `₹${disc} off` });
     } else {
@@ -76,7 +78,8 @@ const Checkout = () => {
     }
   };
 
-  const handlePayment = async () => {
+  const handlePaymentSuccess = async (txnId: string) => {
+    setRazorpayOpen(false);
     setSubmitting(true);
     try {
       for (const item of items) {
@@ -107,9 +110,9 @@ const Checkout = () => {
           gst_amount: gstEnabled ? item.price * 0.18 : 0,
           discount_amount: items.length > 0 ? discount / items.length : 0,
           total_amount: item.price - (discount / items.length) + (gstEnabled ? item.price * 0.18 : 0),
-          payment_method: "mock",
+          payment_method: "razorpay",
           payment_status: "success",
-          transaction_id: `MOCK_${Date.now()}_${item.labTestId.slice(0, 4)}`,
+          transaction_id: txnId,
         });
       }
 
@@ -121,6 +124,8 @@ const Checkout = () => {
     }
     setSubmitting(false);
   };
+
+  const phone = user?.user_metadata?.phone || user?.phone || user?.email?.replace("@labsetu.phone", "") || "";
 
   if (paymentDone) {
     return (
@@ -252,13 +257,22 @@ const Checkout = () => {
                 {gstEnabled && <div className="flex justify-between text-sm"><span>GST (18%)</span><span>+₹{gstAmount.toFixed(0)}</span></div>}
                 <div className="flex justify-between border-t pt-2 text-lg font-bold"><span>Total</span><span className="text-primary">₹{finalAmount.toFixed(0)}</span></div>
               </div>
-              <Button className="w-full" onClick={handlePayment} disabled={submitting}>
-                {submitting ? "Processing..." : `Pay ₹${finalAmount.toFixed(0)} (Mock Payment)`}
+              <Button className="w-full" onClick={() => setRazorpayOpen(true)} disabled={submitting}>
+                {submitting ? "Processing..." : `Pay ₹${finalAmount.toFixed(0)}`}
               </Button>
               <Button variant="ghost" className="w-full" onClick={() => setStep(1)}>Back</Button>
             </CardContent>
           </Card>
         )}
+
+        <RazorpayModal
+          open={razorpayOpen}
+          onClose={() => setRazorpayOpen(false)}
+          onSuccess={handlePaymentSuccess}
+          amount={finalAmount}
+          customerName={patientName}
+          customerPhone={phone}
+        />
       </div>
     </Layout>
   );

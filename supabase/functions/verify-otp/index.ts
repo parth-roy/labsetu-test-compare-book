@@ -2,7 +2,7 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
 Deno.serve(async (req) => {
@@ -32,7 +32,6 @@ Deno.serve(async (req) => {
       .single();
 
     if (otpError || !otpRecord) {
-      // Increment attempts
       await supabase
         .from("otp_verifications")
         .update({ attempts: (otpRecord?.attempts || 0) + 1 })
@@ -47,12 +46,12 @@ Deno.serve(async (req) => {
     // Mark OTP as verified
     await supabase.from("otp_verifications").update({ verified: true }).eq("id", otpRecord.id);
 
-    // Create email from phone (for Supabase auth)
+    // Create email from phone (for auth)
     const fakeEmail = `${phone}@labsetu.phone`;
     const password = `otp_${phone}_${Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!.slice(-8)}`;
 
-    // Try to sign in first (existing user)
-    const { data: signInData, error: signInError } = await supabase.auth.admin.listUsers();
+    // Check existing user
+    const { data: signInData } = await supabase.auth.admin.listUsers();
     const existingUser = signInData?.users?.find(
       (u) => u.email === fakeEmail || u.phone === phone
     );
@@ -62,7 +61,6 @@ Deno.serve(async (req) => {
     if (existingUser) {
       userId = existingUser.id;
     } else {
-      // Create new user
       const { data: newUser, error: createError } = await supabase.auth.admin.createUser({
         email: fakeEmail,
         password,
@@ -75,18 +73,11 @@ Deno.serve(async (req) => {
           phone,
         },
       });
-
       if (createError) throw createError;
       userId = newUser.user.id;
     }
 
-    // Generate session token
-    const { data: sessionData, error: sessionError } = await supabase.auth.admin.generateLink({
-      type: "magiclink",
-      email: fakeEmail,
-    });
-
-    // Use signInWithPassword for the session
+    // Sign in
     const anonClient = createClient(
       Deno.env.get("SUPABASE_URL")!,
       Deno.env.get("SUPABASE_ANON_KEY")!
@@ -98,7 +89,6 @@ Deno.serve(async (req) => {
     });
 
     if (loginError) {
-      // Update password and retry
       await supabase.auth.admin.updateUserById(userId, { password });
       const { data: retrySession, error: retryError } = await anonClient.auth.signInWithPassword({
         email: fakeEmail,

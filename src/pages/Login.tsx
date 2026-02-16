@@ -35,7 +35,7 @@ const Login = () => {
     if (error) {
       toast({ title: "Failed to send OTP", description: error.message || "Try again", variant: "destructive" });
     } else {
-      toast({ title: "OTP Sent!", description: "Test mode: Use 123456" });
+      toast({ title: "OTP Sent!", description: "Check your phone for the OTP" });
       setStep("otp");
     }
   };
@@ -61,9 +61,9 @@ const Login = () => {
             <img src={labsetuLogo} alt="LabSetu" className="mx-auto mb-3 h-12 w-auto" />
             <CardTitle className="font-display text-2xl">Login / Sign Up</CardTitle>
             <CardDescription>Enter your mobile number to continue</CardDescription>
-            <div className="mt-2 flex items-center justify-center gap-1 rounded-md bg-accent/20 px-3 py-1.5 text-xs text-muted-foreground">
+            <div className="mt-2 flex items-center justify-center gap-1 rounded-md bg-primary/10 px-3 py-1.5 text-xs text-muted-foreground">
               <Shield className="h-3 w-3" />
-              Test Mode: OTP is always 123456
+              MSG91 Verified OTP
             </div>
           </CardHeader>
           <CardContent>
