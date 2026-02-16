@@ -8,6 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { supabase } from "@/integrations/supabase/client";
 import { Search as SearchIcon, Star, Clock, Home, FlaskConical, ArrowUpDown, ShoppingCart, Check } from "lucide-react";
 import { useCart } from "@/hooks/useCart";
+import { useLocation } from "@/hooks/useLocation";
 
 interface LabTest {
   id: string;
@@ -25,6 +26,7 @@ const Search = () => {
   const [filterHome, setFilterHome] = useState(false);
   const [compareList, setCompareList] = useState<string[]>([]);
   const { addItem, isInCart } = useCart();
+  const { city } = useLocation();
 
   const searchTests = async () => {
     setLoading(true);
@@ -35,6 +37,10 @@ const Search = () => {
 
     if (query) {
       q = q.or(`name.ilike.%${query}%,category.ilike.%${query}%`, { referencedTable: "tests" });
+    }
+
+    if (city) {
+      q = q.eq("labs.city", city);
     }
 
     const { data, error } = await q.limit(50);
@@ -52,7 +58,7 @@ const Search = () => {
     setLoading(false);
   };
 
-  useEffect(() => { searchTests(); }, [sortBy, filterHome]);
+  useEffect(() => { searchTests(); }, [sortBy, filterHome, city]);
 
   const toggleCompare = (id: string) => {
     setCompareList((prev) => prev.includes(id) ? prev.filter((i) => i !== id) : prev.length < 3 ? [...prev, id] : prev);

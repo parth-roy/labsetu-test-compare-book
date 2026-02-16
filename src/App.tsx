@@ -5,6 +5,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/hooks/useAuth";
 import { CartProvider } from "@/hooks/useCart";
+import { LocationProvider } from "@/hooks/useLocation";
 import Index from "./pages/Index";
 import Login from "./pages/Login";
 import Search from "./pages/Search";
@@ -23,19 +24,21 @@ const App = () => (
       <Sonner />
       <BrowserRouter>
         <AuthProvider>
-          <CartProvider>
-            <Routes>
-              <Route path="/" element={<Index />} />
-              <Route path="/login" element={<Login />} />
-              <Route path="/search" element={<Search />} />
-              <Route path="/book/:labTestId" element={<BookTest />} />
-              <Route path="/checkout" element={<Checkout />} />
-              <Route path="/my-bookings" element={<MyBookings />} />
-              <Route path="/admin" element={<AdminDashboard />} />
-              {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-              <Route path="*" element={<NotFound />} />
-            </Routes>
-          </CartProvider>
+          <LocationProvider>
+            <CartProvider>
+              <Routes>
+                <Route path="/" element={<Index />} />
+                <Route path="/login" element={<Login />} />
+                <Route path="/search" element={<Search />} />
+                <Route path="/book/:labTestId" element={<BookTest />} />
+                <Route path="/checkout" element={<Checkout />} />
+                <Route path="/my-bookings" element={<MyBookings />} />
+                <Route path="/admin" element={<AdminDashboard />} />
+                {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+                <Route path="*" element={<NotFound />} />
+              </Routes>
+            </CartProvider>
+          </LocationProvider>
         </AuthProvider>
       </BrowserRouter>
     </TooltipProvider>
