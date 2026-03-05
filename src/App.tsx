@@ -12,6 +12,8 @@ import Search from "./pages/Search";
 import BookTest from "./pages/BookTest";
 import Checkout from "./pages/Checkout";
 import MyBookings from "./pages/MyBookings";
+import HealthPackages from "./pages/HealthPackages";
+import PackageDetail from "./pages/PackageDetail";
 import AdminDashboard from "./pages/AdminDashboard";
 import NotFound from "./pages/NotFound";
 
@@ -33,6 +35,8 @@ const App = () => (
                 <Route path="/book/:labTestId" element={<BookTest />} />
                 <Route path="/checkout" element={<Checkout />} />
                 <Route path="/my-bookings" element={<MyBookings />} />
+                <Route path="/packages" element={<HealthPackages />} />
+                <Route path="/package/:slug" element={<PackageDetail />} />
                 <Route path="/admin" element={<AdminDashboard />} />
                 {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
                 <Route path="*" element={<NotFound />} />
