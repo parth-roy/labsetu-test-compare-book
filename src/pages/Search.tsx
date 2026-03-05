@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useSearchParams } from "react-router-dom";
 import Layout from "@/components/layout/Layout";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -19,7 +20,9 @@ interface LabTest {
 }
 
 const Search = () => {
-  const [query, setQuery] = useState("");
+  const [searchParams] = useSearchParams();
+  const categoryFromUrl = searchParams.get("category") || "";
+  const [query, setQuery] = useState(categoryFromUrl);
   const [results, setResults] = useState<LabTest[]>([]);
   const [loading, setLoading] = useState(false);
   const [sortBy, setSortBy] = useState("price");
@@ -28,24 +31,28 @@ const Search = () => {
   const { addItem, isInCart } = useCart();
   const { city } = useLocation();
 
-  const searchTests = async () => {
+  const searchTests = async (searchQuery?: string) => {
     setLoading(true);
+    const q_text = searchQuery ?? query;
+
     let q = supabase
       .from("lab_tests")
       .select("id, price, turnaround_hours, labs(id, name, address, city, rating, home_collection, nabl_certified), tests(id, name, category, sample_type, description)")
       .eq("is_available", true);
 
-    if (query) {
-      q = q.or(`name.ilike.%${query}%,category.ilike.%${query}%`, { referencedTable: "tests" });
+    if (q_text) {
+      q = q.or(`name.ilike.%${q_text}%,category.ilike.%${q_text}%`, { referencedTable: "tests" });
     }
 
-    if (city) {
-      q = q.eq("labs.city", city);
-    }
-
-    const { data, error } = await q.limit(50);
+    const { data, error } = await q.limit(100);
     if (!error && data) {
-      let sorted = [...data] as LabTest[];
+      let sorted = (data as LabTest[]).filter((r) => {
+        // PostgREST sets joined table to null when filter doesn't match — remove those
+        if (!r.labs || !r.tests) return false;
+        if (city && r.labs.city.toLowerCase() !== city.toLowerCase()) return false;
+        return true;
+      });
+
       if (filterHome) sorted = sorted.filter((r) => r.labs?.home_collection);
       sorted.sort((a, b) => {
         if (sortBy === "price") return a.price - b.price;
@@ -58,7 +65,15 @@ const Search = () => {
     setLoading(false);
   };
 
-  useEffect(() => { searchTests(); }, [sortBy, filterHome, city]);
+  // Re-search when category URL param changes
+  useEffect(() => {
+    if (categoryFromUrl) {
+      setQuery(categoryFromUrl);
+      searchTests(categoryFromUrl);
+    } else {
+      searchTests();
+    }
+  }, [categoryFromUrl, sortBy, filterHome, city]);
 
   const toggleCompare = (id: string) => {
     setCompareList((prev) => prev.includes(id) ? prev.filter((i) => i !== id) : prev.length < 3 ? [...prev, id] : prev);
@@ -79,7 +94,9 @@ const Search = () => {
   return (
     <Layout>
       <div className="container py-8">
-        <h1 className="mb-6 font-display text-3xl font-bold">Find & Compare Lab Tests</h1>
+        <h1 className="mb-6 font-display text-3xl font-bold">
+          {categoryFromUrl ? `${categoryFromUrl} Tests` : "Find & Compare Lab Tests"}
+        </h1>
 
         {/* Search Bar */}
         <div className="mb-6 flex gap-2">
@@ -93,7 +110,7 @@ const Search = () => {
               onKeyDown={(e) => e.key === "Enter" && searchTests()}
             />
           </div>
-          <Button onClick={searchTests}>Search</Button>
+          <Button onClick={() => searchTests()}>Search</Button>
         </div>
 
         {/* Filters */}
@@ -112,6 +129,7 @@ const Search = () => {
           <Button variant={filterHome ? "default" : "outline"} size="sm" onClick={() => setFilterHome(!filterHome)}>
             <Home className="mr-1 h-4 w-4" /> Home Collection
           </Button>
+          {city && <Badge variant="outline" className="gap-1">📍 {city}</Badge>}
           {compareList.length > 0 && (
             <Badge variant="secondary">{compareList.length}/3 selected for compare</Badge>
           )}
@@ -162,7 +180,7 @@ const Search = () => {
         ) : results.length === 0 ? (
           <div className="py-12 text-center text-muted-foreground">
             <FlaskConical className="mx-auto mb-3 h-12 w-12 opacity-40" />
-            <p>No tests found. Try a different search term.</p>
+            <p>No tests found{city ? ` in ${city}` : ""}. Try a different search or city.</p>
           </div>
         ) : (
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
@@ -179,9 +197,9 @@ const Search = () => {
                   <p className="mb-2 text-sm font-medium text-foreground">{item.labs?.name}</p>
                   <p className="mb-3 text-xs text-muted-foreground">{item.labs?.address}, {item.labs?.city}</p>
                   <div className="mb-3 flex flex-wrap gap-2">
-                    {item.labs?.rating && (
+                    {item.labs?.rating ? (
                       <Badge variant="secondary" className="gap-1"><Star className="h-3 w-3" />{item.labs.rating}</Badge>
-                    )}
+                    ) : null}
                     {item.turnaround_hours && (
                       <Badge variant="outline" className="gap-1"><Clock className="h-3 w-3" />{item.turnaround_hours}h</Badge>
                     )}

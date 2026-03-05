@@ -10,6 +10,7 @@ import { Switch } from "@/components/ui/switch";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
+import RazorpayModal from "@/components/checkout/RazorpayModal";
 import { Calendar, CreditCard, CheckCircle } from "lucide-react";
 
 const BookTest = () => {
@@ -36,19 +37,20 @@ const BookTest = () => {
   const [discount, setDiscount] = useState(0);
   const [submitting, setSubmitting] = useState(false);
   const [paymentDone, setPaymentDone] = useState(false);
+  const [razorpayOpen, setRazorpayOpen] = useState(false);
 
   useEffect(() => {
     if (!labTestId) return;
-    const fetch = async () => {
+    const fetchData = async () => {
       const { data } = await supabase
         .from("lab_tests")
-        .select("*, labs(name, address, city, home_collection), tests(name, category, sample_type)")
+        .select("*, labs(id, name, address, city, home_collection), tests(name, category, sample_type)")
         .eq("id", labTestId)
         .single();
       setLabTest(data);
       setLoading(false);
     };
-    fetch();
+    fetchData();
   }, [labTestId]);
 
   const applyDiscount = async () => {
@@ -60,7 +62,7 @@ const BookTest = () => {
       .eq("is_active", true)
       .single();
     if (data) {
-      const disc = data.discount_percent ? (labTest.price * data.discount_percent) / 100 : data.discount_flat || 0;
+      const disc = data.discount_percent ? (labTest.price * Number(data.discount_percent)) / 100 : Number(data.discount_flat) || 0;
       setDiscount(disc);
       toast({ title: "Discount applied!", description: `₹${disc} off` });
     } else {
@@ -72,13 +74,14 @@ const BookTest = () => {
   const gstAmount = gstEnabled ? basePrice * 0.18 : 0;
   const totalAmount = basePrice - discount + gstAmount;
 
-  const handlePayment = async () => {
-    if (!user) { navigate("/login"); return; }
+  const phone = user?.user_metadata?.phone || user?.phone || user?.email?.replace("@labsetu.phone", "") || "";
+
+  const handlePaymentSuccess = async (txnId: string) => {
+    setRazorpayOpen(false);
     setSubmitting(true);
 
-    // Create booking
     const { data: booking, error: bookErr } = await supabase.from("bookings").insert({
-      patient_id: user.id,
+      patient_id: user!.id,
       lab_id: labTest.labs?.id || labTest.lab_id,
       lab_test_id: labTestId!,
       patient_name: patientName,
@@ -97,17 +100,16 @@ const BookTest = () => {
       return;
     }
 
-    // Create mock payment
     const { error: payErr } = await supabase.from("payments").insert({
       booking_id: booking.id,
-      user_id: user.id,
+      user_id: user!.id,
       amount: basePrice,
       gst_amount: gstAmount,
       discount_amount: discount,
       total_amount: totalAmount,
-      payment_method: "mock",
+      payment_method: "razorpay",
       payment_status: "success",
-      transaction_id: `MOCK_${Date.now()}`,
+      transaction_id: txnId,
     });
 
     if (payErr) {
@@ -162,7 +164,7 @@ const BookTest = () => {
 
         {/* Progress */}
         <div className="mb-8 flex gap-2">
-          {[1, 2, 3].map((s) => (
+          {[1, 2].map((s) => (
             <div key={s} className={`h-2 flex-1 rounded-full ${s <= step ? "bg-primary" : "bg-muted"}`} />
           ))}
         </div>
@@ -259,13 +261,22 @@ const BookTest = () => {
                 {gstEnabled && <div className="flex justify-between text-sm"><span>GST (18%)</span><span>+₹{gstAmount.toFixed(0)}</span></div>}
                 <div className="flex justify-between border-t pt-2 text-lg font-bold"><span>Total</span><span className="text-primary">₹{totalAmount.toFixed(0)}</span></div>
               </div>
-              <Button className="w-full" onClick={handlePayment} disabled={submitting}>
-                {submitting ? "Processing..." : `Pay ₹${totalAmount.toFixed(0)} (Mock Payment)`}
+              <Button className="w-full" onClick={() => setRazorpayOpen(true)} disabled={submitting}>
+                {submitting ? "Processing..." : `Pay ₹${totalAmount.toFixed(0)}`}
               </Button>
               <Button variant="ghost" className="w-full" onClick={() => setStep(1)}>Back</Button>
             </CardContent>
           </Card>
         )}
+
+        <RazorpayModal
+          open={razorpayOpen}
+          onClose={() => setRazorpayOpen(false)}
+          onSuccess={handlePaymentSuccess}
+          amount={totalAmount}
+          customerName={patientName}
+          customerPhone={phone}
+        />
       </div>
     </Layout>
   );
