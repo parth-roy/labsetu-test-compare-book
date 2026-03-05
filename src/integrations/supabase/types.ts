@@ -170,6 +170,63 @@ export type Database = {
         }
         Relationships: []
       }
+      health_packages: {
+        Row: {
+          category: string
+          created_at: string
+          description: string | null
+          discount_percent: number | null
+          discounted_price: number
+          fasting_required: boolean | null
+          id: string
+          included_test_names: string[]
+          is_active: boolean | null
+          is_popular: boolean | null
+          name: string
+          original_price: number
+          report_time_hours: number | null
+          sample_type: string | null
+          slug: string
+          test_count: number
+        }
+        Insert: {
+          category?: string
+          created_at?: string
+          description?: string | null
+          discount_percent?: number | null
+          discounted_price: number
+          fasting_required?: boolean | null
+          id?: string
+          included_test_names?: string[]
+          is_active?: boolean | null
+          is_popular?: boolean | null
+          name: string
+          original_price: number
+          report_time_hours?: number | null
+          sample_type?: string | null
+          slug: string
+          test_count?: number
+        }
+        Update: {
+          category?: string
+          created_at?: string
+          description?: string | null
+          discount_percent?: number | null
+          discounted_price?: number
+          fasting_required?: boolean | null
+          id?: string
+          included_test_names?: string[]
+          is_active?: boolean | null
+          is_popular?: boolean | null
+          name?: string
+          original_price?: number
+          report_time_hours?: number | null
+          sample_type?: string | null
+          slug?: string
+          test_count?: number
+        }
+        Relationships: []
+      }
       lab_tests: {
         Row: {
           created_at: string
