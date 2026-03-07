@@ -275,12 +275,17 @@ export type Database = {
       labs: {
         Row: {
           address: string
+          bank_account_number: string | null
+          cancelled_cheque_url: string | null
+          certificates: string | null
           city: string
+          company_type: string | null
           created_at: string
           description: string | null
           email: string | null
           home_collection: boolean | null
           id: string
+          ifsc_code: string | null
           is_approved: boolean | null
           is_featured: boolean | null
           logo_url: string | null
@@ -289,17 +294,24 @@ export type Database = {
           owner_id: string
           phone: string | null
           rating: number | null
+          status: string
           total_reviews: number | null
+          trade_license_url: string | null
           updated_at: string
         }
         Insert: {
           address: string
+          bank_account_number?: string | null
+          cancelled_cheque_url?: string | null
+          certificates?: string | null
           city?: string
+          company_type?: string | null
           created_at?: string
           description?: string | null
           email?: string | null
           home_collection?: boolean | null
           id?: string
+          ifsc_code?: string | null
           is_approved?: boolean | null
           is_featured?: boolean | null
           logo_url?: string | null
@@ -308,17 +320,24 @@ export type Database = {
           owner_id: string
           phone?: string | null
           rating?: number | null
+          status?: string
           total_reviews?: number | null
+          trade_license_url?: string | null
           updated_at?: string
         }
         Update: {
           address?: string
+          bank_account_number?: string | null
+          cancelled_cheque_url?: string | null
+          certificates?: string | null
           city?: string
+          company_type?: string | null
           created_at?: string
           description?: string | null
           email?: string | null
           home_collection?: boolean | null
           id?: string
+          ifsc_code?: string | null
           is_approved?: boolean | null
           is_featured?: boolean | null
           logo_url?: string | null
@@ -327,7 +346,9 @@ export type Database = {
           owner_id?: string
           phone?: string | null
           rating?: number | null
+          status?: string
           total_reviews?: number | null
+          trade_license_url?: string | null
           updated_at?: string
         }
         Relationships: []
