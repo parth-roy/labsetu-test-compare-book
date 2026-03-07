@@ -110,3 +110,8 @@
     font-family: 'Plus Jakarta Sans', sans-serif;
   }
 }
+
+/* Hide Lovable branding badge */
+[data-lovable-badge] {
+  display: none !important;
+}
