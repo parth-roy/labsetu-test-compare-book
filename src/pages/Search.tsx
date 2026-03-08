@@ -1,17 +1,17 @@
 import { useState, useEffect } from "react";
 import { useSearchParams } from "react-router-dom";
 import Layout from "@/components/layout/Layout";
+import SearchFilters from "@/components/search/SearchFilters";
+import SearchResults from "@/components/search/SearchResults";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { supabase } from "@/integrations/supabase/client";
-import { Search as SearchIcon, Star, Clock, Home, FlaskConical, ArrowUpDown, ShoppingCart, Check } from "lucide-react";
+import { Search as SearchIcon, FlaskConical } from "lucide-react";
 import { useCart } from "@/hooks/useCart";
 import { useLocation } from "@/hooks/useLocation";
 
-interface LabTest {
+export interface LabTest {
   id: string;
   price: number;
   turnaround_hours: number | null;
@@ -19,14 +19,27 @@ interface LabTest {
   tests: { id: string; name: string; category: string; sample_type: string | null; description: string | null } | null;
 }
 
+export interface Filters {
+  sortBy: string;
+  homeCollection: boolean;
+  nablOnly: boolean;
+  maxPrice: number;
+  minRating: number;
+}
+
 const Search = () => {
   const [searchParams] = useSearchParams();
-  const categoryFromUrl = searchParams.get("category") || "";
-  const [query, setQuery] = useState(categoryFromUrl);
+  const initialQuery = searchParams.get("category") || searchParams.get("q") || "";
+  const [query, setQuery] = useState(initialQuery);
   const [results, setResults] = useState<LabTest[]>([]);
   const [loading, setLoading] = useState(false);
-  const [sortBy, setSortBy] = useState("price");
-  const [filterHome, setFilterHome] = useState(false);
+  const [filters, setFilters] = useState<Filters>({
+    sortBy: "price",
+    homeCollection: false,
+    nablOnly: false,
+    maxPrice: 10000,
+    minRating: 0,
+  });
   const [compareList, setCompareList] = useState<string[]>([]);
   const { addItem, isInCart } = useCart();
   const { city } = useLocation();
@@ -47,17 +60,19 @@ const Search = () => {
     const { data, error } = await q.limit(100);
     if (!error && data) {
       let sorted = (data as LabTest[]).filter((r) => {
-        // PostgREST sets joined table to null when filter doesn't match — remove those
         if (!r.labs || !r.tests) return false;
         if (city && r.labs.city.toLowerCase() !== city.toLowerCase()) return false;
+        if (filters.homeCollection && !r.labs.home_collection) return false;
+        if (filters.nablOnly && !r.labs.nabl_certified) return false;
+        if (r.price > filters.maxPrice) return false;
+        if (filters.minRating > 0 && (r.labs.rating || 0) < filters.minRating) return false;
         return true;
       });
 
-      if (filterHome) sorted = sorted.filter((r) => r.labs?.home_collection);
       sorted.sort((a, b) => {
-        if (sortBy === "price") return a.price - b.price;
-        if (sortBy === "rating") return (b.labs?.rating || 0) - (a.labs?.rating || 0);
-        if (sortBy === "turnaround") return (a.turnaround_hours || 99) - (b.turnaround_hours || 99);
+        if (filters.sortBy === "price") return a.price - b.price;
+        if (filters.sortBy === "rating") return (b.labs?.rating || 0) - (a.labs?.rating || 0);
+        if (filters.sortBy === "turnaround") return (a.turnaround_hours || 99) - (b.turnaround_hours || 99);
         return 0;
       });
       setResults(sorted);
@@ -65,37 +80,21 @@ const Search = () => {
     setLoading(false);
   };
 
-  // Re-search when category URL param changes
   useEffect(() => {
-    if (categoryFromUrl) {
-      setQuery(categoryFromUrl);
-      searchTests(categoryFromUrl);
-    } else {
-      searchTests();
-    }
-  }, [categoryFromUrl, sortBy, filterHome, city]);
+    const q = searchParams.get("category") || searchParams.get("q") || "";
+    if (q) setQuery(q);
+    searchTests(q || undefined);
+  }, [searchParams.get("category"), searchParams.get("q"), filters, city]);
 
   const toggleCompare = (id: string) => {
     setCompareList((prev) => prev.includes(id) ? prev.filter((i) => i !== id) : prev.length < 3 ? [...prev, id] : prev);
   };
 
-  const getScore = (item: LabTest) => {
-    let score = 0;
-    score += Math.max(0, 100 - item.price / 10);
-    score += (item.labs?.rating || 0) * 15;
-    score += item.turnaround_hours ? Math.max(0, 50 - item.turnaround_hours) : 0;
-    if (item.labs?.nabl_certified) score += 20;
-    if (item.labs?.home_collection) score += 10;
-    return Math.round(score);
-  };
-
-  const compared = results.filter((r) => compareList.includes(r.id));
-
   return (
     <Layout>
-      <div className="container py-8">
-        <h1 className="mb-6 font-display text-3xl font-bold">
-          {categoryFromUrl ? `${categoryFromUrl} Tests` : "Find & Compare Lab Tests"}
+      <div className="container py-6">
+        <h1 className="mb-4 text-2xl font-bold">
+          {initialQuery ? `${initialQuery} Tests` : "Find & Compare Lab Tests"}
         </h1>
 
         {/* Search Bar */}
@@ -113,130 +112,40 @@ const Search = () => {
           <Button onClick={() => searchTests()}>Search</Button>
         </div>
 
-        {/* Filters */}
-        <div className="mb-6 flex flex-wrap items-center gap-3">
-          <Select value={sortBy} onValueChange={setSortBy}>
-            <SelectTrigger className="w-40">
-              <ArrowUpDown className="mr-2 h-4 w-4" />
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="price">Price: Low → High</SelectItem>
-              <SelectItem value="rating">Rating: High → Low</SelectItem>
-              <SelectItem value="turnaround">Fastest Results</SelectItem>
-            </SelectContent>
-          </Select>
-          <Button variant={filterHome ? "default" : "outline"} size="sm" onClick={() => setFilterHome(!filterHome)}>
-            <Home className="mr-1 h-4 w-4" /> Home Collection
-          </Button>
-          {city && <Badge variant="outline" className="gap-1">📍 {city}</Badge>}
-          {compareList.length > 0 && (
-            <Badge variant="secondary">{compareList.length}/3 selected for compare</Badge>
-          )}
-        </div>
+        {city && <Badge variant="outline" className="mb-4 gap-1">📍 {city}</Badge>}
 
-        {/* Compare Panel */}
-        {compared.length >= 2 && (
-          <Card className="mb-6 border-primary/30 bg-primary/5">
-            <CardContent className="p-4">
-              <h3 className="mb-3 font-display font-semibold">Lab Comparison</h3>
-              <div className="overflow-x-auto">
-                <table className="w-full text-sm">
-                  <thead>
-                    <tr className="border-b">
-                      <th className="p-2 text-left">Lab</th>
-                      <th className="p-2 text-left">Test</th>
-                      <th className="p-2 text-right">Price</th>
-                      <th className="p-2 text-right">Rating</th>
-                      <th className="p-2 text-right">TAT</th>
-                      <th className="p-2 text-center">Home</th>
-                      <th className="p-2 text-center">NABL</th>
-                      <th className="p-2 text-right">Score</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {compared.map((item) => (
-                      <tr key={item.id} className="border-b">
-                        <td className="p-2 font-medium">{item.labs?.name}</td>
-                        <td className="p-2">{item.tests?.name}</td>
-                        <td className="p-2 text-right font-semibold text-primary">₹{item.price}</td>
-                        <td className="p-2 text-right">{item.labs?.rating || "-"} ⭐</td>
-                        <td className="p-2 text-right">{item.turnaround_hours || "-"}h</td>
-                        <td className="p-2 text-center">{item.labs?.home_collection ? "✅" : "❌"}</td>
-                        <td className="p-2 text-center">{item.labs?.nabl_certified ? "✅" : "❌"}</td>
-                        <td className="p-2 text-right font-bold text-primary">{getScore(item)}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
+        <div className="flex gap-6">
+          {/* Sidebar Filters */}
+          <aside className="hidden w-56 shrink-0 lg:block">
+            <SearchFilters filters={filters} setFilters={setFilters} />
+          </aside>
+
+          {/* Results */}
+          <div className="flex-1">
+            {compareList.length > 0 && (
+              <div className="mb-4 rounded-lg border border-primary/20 bg-primary/5 px-4 py-2 text-sm font-medium">
+                {compareList.length}/3 selected for compare
               </div>
-            </CardContent>
-          </Card>
-        )}
+            )}
 
-        {/* Results */}
-        {loading ? (
-          <div className="py-12 text-center text-muted-foreground">Searching...</div>
-        ) : results.length === 0 ? (
-          <div className="py-12 text-center text-muted-foreground">
-            <FlaskConical className="mx-auto mb-3 h-12 w-12 opacity-40" />
-            <p>No tests found{city ? ` in ${city}` : ""}. Try a different search or city.</p>
+            {loading ? (
+              <div className="py-12 text-center text-muted-foreground">Searching...</div>
+            ) : results.length === 0 ? (
+              <div className="py-12 text-center text-muted-foreground">
+                <FlaskConical className="mx-auto mb-3 h-12 w-12 opacity-40" />
+                <p>No tests found{city ? ` in ${city}` : ""}. Try a different search or city.</p>
+              </div>
+            ) : (
+              <SearchResults
+                results={results}
+                compareList={compareList}
+                toggleCompare={toggleCompare}
+                addItem={addItem}
+                isInCart={isInCart}
+              />
+            )}
           </div>
-        ) : (
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-            {results.map((item) => (
-              <Card key={item.id} className={`transition-shadow hover:shadow-md ${compareList.includes(item.id) ? "ring-2 ring-primary" : ""}`}>
-                <CardContent className="p-4">
-                  <div className="mb-2 flex items-start justify-between">
-                    <div>
-                      <h3 className="font-semibold">{item.tests?.name}</h3>
-                      <p className="text-sm text-muted-foreground">{item.tests?.category}</p>
-                    </div>
-                    <Badge className="text-lg font-bold">₹{item.price}</Badge>
-                  </div>
-                  <p className="mb-2 text-sm font-medium text-foreground">{item.labs?.name}</p>
-                  <p className="mb-3 text-xs text-muted-foreground">{item.labs?.address}, {item.labs?.city}</p>
-                  <div className="mb-3 flex flex-wrap gap-2">
-                    {item.labs?.rating ? (
-                      <Badge variant="secondary" className="gap-1"><Star className="h-3 w-3" />{item.labs.rating}</Badge>
-                    ) : null}
-                    {item.turnaround_hours && (
-                      <Badge variant="outline" className="gap-1"><Clock className="h-3 w-3" />{item.turnaround_hours}h</Badge>
-                    )}
-                    {item.labs?.home_collection && <Badge variant="outline" className="gap-1"><Home className="h-3 w-3" />Home</Badge>}
-                    {item.labs?.nabl_certified && <Badge variant="secondary">NABL</Badge>}
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs text-muted-foreground">Score: <strong className="text-primary">{getScore(item)}</strong></span>
-                    <div className="flex gap-2">
-                      <Button variant="outline" size="sm" onClick={() => toggleCompare(item.id)}>
-                        {compareList.includes(item.id) ? "Remove" : "Compare"}
-                      </Button>
-                      {isInCart(item.id) ? (
-                        <Button size="sm" variant="secondary" disabled className="gap-1">
-                          <Check className="h-3 w-3" /> Added
-                        </Button>
-                      ) : (
-                        <Button size="sm" className="gap-1" onClick={() => addItem({
-                          id: item.labs?.id || "",
-                          labTestId: item.id,
-                          testName: item.tests?.name || "",
-                          labName: item.labs?.name || "",
-                          labCity: item.labs?.city || "",
-                          price: item.price,
-                          turnaroundHours: item.turnaround_hours,
-                          homeCollection: item.labs?.home_collection || false,
-                        })}>
-                          <ShoppingCart className="h-3 w-3" /> Add
-                        </Button>
-                      )}
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        )}
+        </div>
       </div>
     </Layout>
   );

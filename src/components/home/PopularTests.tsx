@@ -1,45 +1,44 @@
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
-import { ArrowRight, Droplets, HeartPulse, Activity, FlaskConical, Microscope, Brain } from "lucide-react";
+import { ArrowRight, Droplets, HeartPulse, Activity, FlaskConical, Microscope, Brain, Sparkles, Beaker } from "lucide-react";
 
 const popularTests = [
-  { name: "Complete Blood Count (CBC)", price: "₹299", icon: Droplets },
-  { name: "Lipid Profile", price: "₹449", icon: HeartPulse },
-  { name: "Thyroid Profile (T3, T4, TSH)", price: "₹549", icon: Activity },
-  { name: "HbA1c (Diabetes)", price: "₹399", icon: FlaskConical },
-  { name: "Liver Function Test", price: "₹499", icon: Microscope },
-  { name: "Kidney Function Test", price: "₹599", icon: Brain },
+  { name: "Complete Blood Count (CBC)", price: "₹299", icon: Droplets, color: "bg-red-50 text-red-500" },
+  { name: "Lipid Profile", price: "₹449", icon: HeartPulse, color: "bg-pink-50 text-pink-500" },
+  { name: "Thyroid Profile (T3, T4, TSH)", price: "₹549", icon: Activity, color: "bg-purple-50 text-purple-500" },
+  { name: "HbA1c (Diabetes)", price: "₹399", icon: FlaskConical, color: "bg-orange-50 text-orange-500" },
+  { name: "Liver Function Test", price: "₹499", icon: Microscope, color: "bg-green-50 text-green-500" },
+  { name: "Kidney Function Test", price: "₹599", icon: Brain, color: "bg-blue-50 text-blue-500" },
+  { name: "Vitamin D", price: "₹699", icon: Sparkles, color: "bg-amber-50 text-amber-500" },
+  { name: "Urine Routine", price: "₹199", icon: Beaker, color: "bg-teal-50 text-teal-500" },
 ];
 
 const PopularTests = () => {
   return (
-    <section className="bg-muted/30 py-16">
+    <section className="py-10 bg-muted/30">
       <div className="container">
-        <div className="flex items-end justify-between">
-          <div>
-            <h2 className="font-display text-2xl font-bold text-foreground">Popular Tests</h2>
-            <p className="mt-1 text-sm text-muted-foreground">Most booked diagnostic tests on LabSetu</p>
-          </div>
-          <Button variant="ghost" size="sm" className="hidden sm:flex" asChild>
-            <Link to="/search">View all <ArrowRight className="ml-1 h-4 w-4" /></Link>
-          </Button>
+        <div className="flex items-center justify-between mb-5">
+          <h2 className="text-xl font-bold text-foreground">Popular Individual Tests</h2>
+          <Link to="/search" className="flex items-center gap-1 text-sm font-semibold text-primary hover:underline">
+            View all <ArrowRight className="h-4 w-4" />
+          </Link>
         </div>
 
-        <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
           {popularTests.map((test) => (
-            <Card key={test.name} className="group cursor-pointer transition-shadow hover:shadow-md">
-              <CardContent className="flex items-center gap-4 p-5">
-                <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-primary/10 transition-colors group-hover:bg-primary/20">
-                  <test.icon className="h-5 w-5 text-primary" />
-                </div>
-                <div className="flex-1">
-                  <h3 className="text-sm font-semibold text-foreground">{test.name}</h3>
-                  <p className="text-xs text-muted-foreground">Starting from</p>
-                </div>
-                <span className="font-display text-lg font-bold text-primary">{test.price}</span>
-              </CardContent>
-            </Card>
+            <Link
+              key={test.name}
+              to={`/search?q=${encodeURIComponent(test.name)}`}
+              className="group flex items-center gap-3 rounded-xl border bg-background p-4 shadow-sm transition-all hover:shadow-md hover:border-primary/30"
+            >
+              <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ${test.color} transition-transform group-hover:scale-110`}>
+                <test.icon className="h-5 w-5" />
+              </div>
+              <div className="min-w-0 flex-1">
+                <h3 className="text-xs font-semibold text-foreground leading-tight line-clamp-2">{test.name}</h3>
+                <p className="mt-0.5 text-xs text-muted-foreground">Starting from <span className="font-bold text-primary">{test.price}</span></p>
+              </div>
+            </Link>
           ))}
         </div>
       </div>

@@ -1,85 +1,90 @@
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
-import { Card, CardContent } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/integrations/supabase/client";
-import { ArrowRight, Sparkles, TestTubes, Clock, ChevronRight } from "lucide-react";
+import { ArrowRight, Clock, TestTubes, ChevronDown } from "lucide-react";
+import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
+import { Skeleton } from "@/components/ui/skeleton";
 
 const FeaturedPackages = () => {
   const [packages, setPackages] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const fetch = async () => {
       const { data } = await supabase
         .from("health_packages")
-        .select("*")
+        .select("id, name, slug, test_count, original_price, discounted_price, discount_percent, report_time_hours, is_popular, category")
         .eq("is_active", true)
-        .eq("is_popular", true)
-        .order("discounted_price", { ascending: true })
-        .limit(4);
+        .order("is_popular", { ascending: false })
+        .limit(8);
       setPackages(data || []);
+      setLoading(false);
     };
     fetch();
   }, []);
 
-  if (packages.length === 0) return null;
-
   return (
-    <section className="py-16">
+    <section className="py-10">
       <div className="container">
-        <div className="flex items-end justify-between mb-8">
-          <div>
-            <div className="flex items-center gap-2 mb-1">
-              <Sparkles className="h-5 w-5 text-amber-500" />
-              <h2 className="font-display text-2xl font-bold text-foreground">Health Packages</h2>
-            </div>
-            <p className="text-sm text-muted-foreground">Save big with bundled test packages</p>
+        <div className="flex items-center justify-between mb-5">
+          <h2 className="text-xl font-bold text-foreground">Full Body Health Checkups</h2>
+          <Link to="/packages" className="flex items-center gap-1 text-sm font-semibold text-primary hover:underline">
+            See all <ArrowRight className="h-4 w-4" />
+          </Link>
+        </div>
+
+        {loading ? (
+          <div className="flex gap-4 overflow-hidden">
+            {Array.from({ length: 4 }).map((_, i) => (
+              <Skeleton key={i} className="h-52 w-72 shrink-0 rounded-xl" />
+            ))}
           </div>
-          <Button variant="ghost" size="sm" className="hidden sm:flex" asChild>
-            <Link to="/packages">View all <ArrowRight className="ml-1 h-4 w-4" /></Link>
-          </Button>
-        </div>
+        ) : (
+          <ScrollArea className="w-full">
+            <div className="flex gap-4 pb-4">
+              {packages.map((pkg) => (
+                <div
+                  key={pkg.id}
+                  className="shrink-0 w-[280px] rounded-xl border bg-background shadow-sm transition-shadow hover:shadow-md"
+                >
+                  <div className="p-4">
+                    <h3 className="text-sm font-bold text-foreground leading-tight line-clamp-2 min-h-[2.5rem]">
+                      {pkg.name}
+                    </h3>
 
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          {packages.map((pkg) => (
-            <Link key={pkg.id} to={`/package/${pkg.slug}`}>
-              <Card className="group h-full cursor-pointer transition-all hover:shadow-md hover:-translate-y-0.5">
-                <CardContent className="p-4">
-                  <div className="mb-2 flex items-start justify-between">
-                    <h3 className="font-semibold text-sm leading-tight pr-2">{pkg.name}</h3>
-                    <Badge variant="secondary" className="text-[10px] text-green-700 bg-green-100 border-0 shrink-0">
-                      {Number(pkg.discount_percent)}% off
-                    </Badge>
-                  </div>
-
-                  <p className="mb-3 text-xs text-muted-foreground line-clamp-2">{pkg.description}</p>
-
-                  <div className="mb-3 flex gap-3 text-[11px] text-muted-foreground">
-                    <span className="flex items-center gap-1"><TestTubes className="h-3 w-3" /> {pkg.test_count} tests</span>
-                    <span className="flex items-center gap-1"><Clock className="h-3 w-3" /> {pkg.report_time_hours}h</span>
-                  </div>
-
-                  <div className="flex items-end justify-between">
-                    <div>
-                      <span className="text-xs text-muted-foreground line-through">₹{Number(pkg.original_price).toLocaleString()}</span>
-                      <p className="font-display text-lg font-bold text-primary">₹{Number(pkg.discounted_price).toLocaleString()}</p>
+                    <div className="mt-2 flex items-center gap-2 text-xs text-muted-foreground">
+                      <span className="flex items-center gap-1">
+                        <TestTubes className="h-3 w-3" /> Contains {pkg.test_count} tests
+                      </span>
+                      <ChevronDown className="h-3 w-3" />
                     </div>
-                    <span className="text-xs text-primary font-medium flex items-center gap-0.5 group-hover:underline">
-                      Details <ChevronRight className="h-3 w-3" />
-                    </span>
-                  </div>
-                </CardContent>
-              </Card>
-            </Link>
-          ))}
-        </div>
 
-        <div className="mt-4 text-center sm:hidden">
-          <Button variant="outline" size="sm" asChild>
-            <Link to="/packages">View All Packages <ArrowRight className="ml-1 h-4 w-4" /></Link>
-          </Button>
-        </div>
+                    <p className="mt-1 text-xs text-muted-foreground flex items-center gap-1">
+                      <Clock className="h-3 w-3" /> Report within {pkg.report_time_hours} hours
+                    </p>
+
+                    <div className="mt-3 flex items-center gap-2">
+                      <span className="text-lg font-bold text-foreground">₹{Number(pkg.discounted_price).toLocaleString()}</span>
+                      <span className="text-sm text-muted-foreground line-through">₹{Number(pkg.original_price).toLocaleString()}</span>
+                      <Badge className="bg-success/10 text-success border-0 text-xs font-semibold">
+                        {Math.round(Number(pkg.discount_percent))}% off
+                      </Badge>
+                    </div>
+
+                    <Link to={`/package/${pkg.slug}`}>
+                      <Button variant="outline" className="mt-3 w-full text-primary border-primary hover:bg-primary hover:text-primary-foreground font-semibold">
+                        BOOK
+                      </Button>
+                    </Link>
+                  </div>
+                </div>
+              ))}
+            </div>
+            <ScrollBar orientation="horizontal" className="h-1" />
+          </ScrollArea>
+        )}
       </div>
     </section>
   );
