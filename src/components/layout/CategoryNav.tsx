@@ -1,60 +1,44 @@
 import { Link } from "react-router-dom";
-import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 import {
-  Stethoscope,
-  HeartPulse,
-  FlaskConical,
-  Activity,
-  Droplets,
-  Baby,
-  Bone,
-  Brain,
-  Eye,
-  Pill,
-  Microscope,
-  Dna,
+  Stethoscope, HeartPulse, FlaskConical, Activity, Droplets,
+  Baby, Bone, Brain, Pill, Microscope, Gift, Sparkles,
 } from "lucide-react";
 
 const categories = [
-  { name: "Full Body Checkup", icon: Stethoscope },
-  { name: "Heart Health", icon: HeartPulse },
-  { name: "Thyroid", icon: FlaskConical },
-  { name: "Diabetes", icon: Activity },
-  { name: "Blood Tests", icon: Droplets },
-  { name: "Liver Function", icon: Microscope },
-  { name: "Kidney Function", icon: Brain },
-  { name: "Women's Health", icon: Baby },
-  { name: "Bone Health", icon: Bone },
-  { name: "Eye Tests", icon: Eye },
-  { name: "Allergy Tests", icon: Pill },
-  { name: "Genetic Tests", icon: Dna },
+  { name: "Packages", icon: Gift, href: "/packages", highlight: true },
+  { name: "Full Body Checkup", icon: Stethoscope, href: "/search?category=Full Body Checkup" },
+  { name: "Heart Health", icon: HeartPulse, href: "/search?category=Heart Health" },
+  { name: "Thyroid", icon: FlaskConical, href: "/search?category=Thyroid" },
+  { name: "Diabetes", icon: Activity, href: "/search?category=Diabetes" },
+  { name: "Blood Tests", icon: Droplets, href: "/search?category=Blood Tests" },
+  { name: "Liver Function", icon: Microscope, href: "/search?category=Liver Function" },
+  { name: "Kidney Function", icon: Brain, href: "/search?category=Kidney Function" },
+  { name: "Women's Health", icon: Baby, href: "/search?category=Women's Health" },
+  { name: "Vitamins", icon: Sparkles, href: "/search?category=Vitamins" },
+  { name: "Allergy", icon: Pill, href: "/search?category=Allergy Tests" },
+  { name: "Bone Health", icon: Bone, href: "/search?category=Bone Health" },
 ];
 
 const CategoryNav = () => {
   return (
-    <div className="sticky top-16 z-40 border-b bg-card/95 backdrop-blur-sm">
+    <div className="sticky top-[calc(4rem+1px)] z-40 border-b bg-background">
       <div className="container">
-        <ScrollArea className="w-full whitespace-nowrap">
-          <div className="flex items-center gap-1 py-2">
+        <div className="hide-scrollbar flex items-center gap-1 overflow-x-auto py-2.5">
+          {categories.map((cat) => (
             <Link
-              to="/packages"
-              className="flex shrink-0 items-center gap-1.5 rounded-full bg-primary/10 border border-primary/20 px-3 py-1.5 text-xs font-semibold text-primary transition-colors hover:bg-primary/20"
+              key={cat.name}
+              to={cat.href}
+              className={`flex shrink-0 items-center gap-1.5 rounded-full px-3.5 py-1.5 text-xs font-medium transition-colors ${
+                cat.highlight
+                  ? "bg-primary text-primary-foreground hover:bg-primary/90"
+                  : "border text-muted-foreground hover:border-primary/30 hover:bg-primary/5 hover:text-primary"
+              }`}
             >
-              🎁 Packages
+              <cat.icon className="h-3.5 w-3.5" />
+              {cat.name}
             </Link>
-            {categories.map((cat) => (
-              <Link
-                key={cat.name}
-                to={`/search?category=${encodeURIComponent(cat.name)}`}
-                className="flex shrink-0 items-center gap-1.5 rounded-full border border-transparent px-3 py-1.5 text-xs font-medium text-muted-foreground transition-colors hover:border-primary/20 hover:bg-primary/5 hover:text-primary"
-              >
-                <cat.icon className="h-3.5 w-3.5" />
-                {cat.name}
-              </Link>
-            ))}
-          </div>
-          <ScrollBar orientation="horizontal" className="h-1" />
-        </ScrollArea>
+          ))}
+        </div>
       </div>
     </div>
   );
