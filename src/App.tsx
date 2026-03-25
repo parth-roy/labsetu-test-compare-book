@@ -18,6 +18,8 @@ import PackageDetail from "./pages/PackageDetail";
 import AdminDashboard from "./pages/AdminDashboard";
 import LabRegistration from "./pages/LabRegistration";
 import LabDashboard from "./pages/LabDashboard";
+import Partnerships from "./pages/Partnerships";
+import DoctorConsultation from "./pages/DoctorConsultation";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -44,6 +46,8 @@ const App = () => (
                 <Route path="/admin" element={<AdminDashboard />} />
                 <Route path="/lab-registration" element={<LabRegistration />} />
                 <Route path="/lab-dashboard" element={<LabDashboard />} />
+                <Route path="/partnerships" element={<Partnerships />} />
+                <Route path="/doctor-consultation" element={<DoctorConsultation />} />
                 {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
                 <Route path="*" element={<NotFound />} />
               </Routes>

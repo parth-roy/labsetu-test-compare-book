@@ -1,11 +1,12 @@
 import { Link } from "react-router-dom";
 import {
   Stethoscope, HeartPulse, FlaskConical, Activity, Droplets,
-  Baby, Bone, Brain, Pill, Microscope, Gift, Sparkles,
+  Baby, Bone, Brain, Pill, Microscope, Gift, Sparkles, Handshake, UserCheck,
 } from "lucide-react";
 
 const categories = [
   { name: "Packages", icon: Gift, href: "/packages", highlight: true },
+  { name: "Consult Doctor", icon: UserCheck, href: "/doctor-consultation", highlight: true },
   { name: "Full Body Checkup", icon: Stethoscope, href: "/search?category=Full Body Checkup" },
   { name: "Heart Health", icon: HeartPulse, href: "/search?category=Heart Health" },
   { name: "Thyroid", icon: FlaskConical, href: "/search?category=Thyroid" },
@@ -17,6 +18,7 @@ const categories = [
   { name: "Vitamins", icon: Sparkles, href: "/search?category=Vitamins" },
   { name: "Allergy", icon: Pill, href: "/search?category=Allergy Tests" },
   { name: "Bone Health", icon: Bone, href: "/search?category=Bone Health" },
+  { name: "Partnerships", icon: Handshake, href: "/partnerships" },
 ];
 
 const CategoryNav = () => {
