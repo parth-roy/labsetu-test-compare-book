@@ -18,6 +18,8 @@ import PackageDetail from "./pages/PackageDetail";
 import AdminDashboard from "./pages/AdminDashboard";
 import LabRegistration from "./pages/LabRegistration";
 import LabDashboard from "./pages/LabDashboard";
+import Partnerships from "./pages/Partnerships";
+import DoctorConsultation from "./pages/DoctorConsultation";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
