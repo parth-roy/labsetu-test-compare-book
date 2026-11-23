@@ -7,10 +7,16 @@ import { componentTagger } from "lovable-tagger";
 export default defineConfig(({ mode }) => ({
   server: {
     host: "::",
-    port: 8080,
+    port: 4952,
+    allowedHosts: true,
     hmr: {
       overlay: false,
     },
+  },
+  preview: {
+    host: "::",
+    port: 4952,
+    allowedHosts: true,
   },
   plugins: [react(), mode === "development" && componentTagger()].filter(Boolean),
   resolve: {
