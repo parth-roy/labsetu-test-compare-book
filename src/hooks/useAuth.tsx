@@ -16,6 +16,16 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
+const normalizeAuthError = (error: unknown) => {
+  const message = error instanceof Error ? error.message : "Authentication failed. Please try again.";
+  const isNetworkError = /failed to fetch|fetch failed|networkerror|network request failed/i.test(message);
+  return {
+    message: isNetworkError
+      ? "Could not connect to the sign-in service. Check your connection and try again."
+      : message,
+  };
+};
+
 export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
@@ -56,27 +66,39 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   }, []);
 
   const signUp = async (email: string, password: string, fullName: string, selectedRole: "patient" | "lab_partner") => {
-    const { error } = await supabase.auth.signUp({
-      email,
-      password,
-      options: {
-        data: { full_name: fullName, role: selectedRole },
-        emailRedirectTo: window.location.origin,
-      },
-    });
-    return { error };
+    try {
+      const { error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          data: { full_name: fullName, role: selectedRole },
+          emailRedirectTo: window.location.origin,
+        },
+      });
+      return { error: error ? normalizeAuthError(error) : null };
+    } catch (error) {
+      return { error: normalizeAuthError(error) };
+    }
   };
 
   const signIn = async (email: string, password: string) => {
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
-    return { error };
+    try {
+      const { error } = await supabase.auth.signInWithPassword({ email, password });
+      return { error: error ? normalizeAuthError(error) : null };
+    } catch (error) {
+      return { error: normalizeAuthError(error) };
+    }
   };
 
   const resetPassword = async (email: string) => {
-    const { error } = await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: `${window.location.origin}/reset-password`,
-    });
-    return { error };
+    try {
+      const { error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: `${window.location.origin}/reset-password`,
+      });
+      return { error: error ? normalizeAuthError(error) : null };
+    } catch (error) {
+      return { error: normalizeAuthError(error) };
+    }
   };
 
   const updatePassword = async (password: string) => {

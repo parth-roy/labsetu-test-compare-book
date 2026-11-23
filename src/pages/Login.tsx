@@ -39,7 +39,18 @@ const Login = () => {
       toast({ title: "Login failed", description: error.message, variant: "destructive" });
     } else {
       toast({ title: "Welcome back! 🎉" });
-      navigate("/");
+      const { data: { user: signedInUser } } = await supabase.auth.getUser();
+      if (signedInUser) {
+        const { data: roleRecord } = await supabase
+          .from("user_roles")
+          .select("role")
+          .eq("user_id", signedInUser.id)
+          .maybeSingle();
+        const role = roleRecord?.role;
+        navigate(role === "admin" ? "/admin" : role === "lab_partner" ? "/lab-dashboard" : "/my-bookings");
+      } else {
+        navigate("/my-bookings");
+      }
     }
   };
 
