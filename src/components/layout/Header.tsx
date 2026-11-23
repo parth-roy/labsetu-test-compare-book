@@ -36,8 +36,8 @@ const Header = () => {
     <header className="sticky top-0 z-50 border-b bg-background shadow-sm">
       <div className="container flex h-16 items-center gap-4">
         {/* Logo */}
-        <Link to="/" className="shrink-0">
-          <img src={labsetuLogo} alt="LabSetu" className="h-8 w-auto" />
+        <Link to="/" className="shrink-0 flex items-center">
+          <img src={labsetuLogo} alt="LabSetu" className="h-10 sm:h-11 md:h-12 w-auto object-contain" />
         </Link>
 
         {/* Location Selector */}

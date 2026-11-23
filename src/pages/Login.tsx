@@ -9,7 +9,7 @@ import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { Mail, Lock, User, Loader2, ArrowLeft, CheckCircle, Building2, Smartphone } from "lucide-react";
+import { Mail, Lock, User, Loader2, ArrowLeft, CheckCircle, Building2, Smartphone, RefreshCw } from "lucide-react";
 import labsetuLogo from "@/assets/labsetu-logo.png";
 
 const Login = () => {
@@ -20,7 +20,10 @@ const Login = () => {
   const [mode, setMode] = useState<"login" | "signup" | "forgot" | "verify">("login");
   const [loginMethod, setLoginMethod] = useState<"email" | "phone">("email");
   const [loading, setLoading] = useState(false);
-  const { signIn, signUp, resetPassword } = useAuth();
+  const [resending, setResending] = useState(false);
+  const [unconfirmedEmail, setUnconfirmedEmail] = useState<string | null>(null);
+
+  const { signIn, signUp, resetPassword, resendVerificationEmail } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
 
@@ -32,22 +35,58 @@ const Login = () => {
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
+    const cleanEmail = email.trim().toLowerCase();
+    if (!cleanEmail) {
+      toast({ title: "Email required", description: "Please enter your email", variant: "destructive" });
+      return;
+    }
     setLoading(true);
-    const { error } = await signIn(email, password);
+    const { data, error } = await signIn(cleanEmail, password);
     setLoading(false);
+
     if (error) {
-      toast({ title: "Login failed", description: error.message, variant: "destructive" });
+      if (error.isEmailNotConfirmed) {
+        setUnconfirmedEmail(cleanEmail);
+        toast({
+          title: "Email not verified",
+          description: "Please check your inbox to confirm your email, or click 'Resend Verification' below.",
+          variant: "destructive",
+        });
+      } else if (error.isNetworkError) {
+        toast({
+          title: "Connection Error",
+          description: error.message,
+          variant: "destructive",
+        });
+      } else {
+        toast({
+          title: "Login failed",
+          description: error.message,
+          variant: "destructive",
+        });
+      }
     } else {
+      setUnconfirmedEmail(null);
       toast({ title: "Welcome back! 🎉" });
-      const { data: { user: signedInUser } } = await supabase.auth.getUser();
-      if (signedInUser) {
-        const { data: roleRecord } = await supabase
-          .from("user_roles")
-          .select("role")
-          .eq("user_id", signedInUser.id)
-          .maybeSingle();
-        const role = roleRecord?.role;
-        navigate(role === "admin" ? "/admin" : role === "lab_partner" ? "/lab-dashboard" : "/my-bookings");
+      const user = data?.user;
+      const metaRole = (user?.user_metadata as any)?.role;
+
+      if (metaRole === "admin") {
+        navigate("/admin");
+      } else if (metaRole === "lab_partner") {
+        navigate("/lab-dashboard");
+      } else if (user?.id) {
+        try {
+          const { data: roleRecord } = await supabase
+            .from("user_roles")
+            .select("role")
+            .eq("user_id", user.id)
+            .maybeSingle();
+          const role = roleRecord?.role;
+          navigate(role === "admin" ? "/admin" : role === "lab_partner" ? "/lab-dashboard" : "/my-bookings");
+        } catch {
+          navigate("/my-bookings");
+        }
       } else {
         navigate("/my-bookings");
       }
@@ -60,20 +99,42 @@ const Login = () => {
       toast({ title: "Password too short", description: "Use at least 6 characters", variant: "destructive" });
       return;
     }
+    const cleanEmail = email.trim().toLowerCase();
     setLoading(true);
-    const { error } = await signUp(email, password, fullName, selectedRole);
+    const { data, error } = await signUp(cleanEmail, password, fullName.trim(), selectedRole);
     setLoading(false);
+
     if (error) {
-      toast({ title: "Signup failed", description: error.message, variant: "destructive" });
+      if (error.isUserAlreadyExists) {
+        toast({
+          title: "Account exists",
+          description: "An account with this email already exists. Please sign in.",
+          variant: "destructive",
+        });
+        setMode("login");
+      } else {
+        toast({
+          title: "Signup failed",
+          description: error.message,
+          variant: "destructive",
+        });
+      }
     } else {
-      setMode("verify");
+      // If Supabase returned an active session directly, navigate to app
+      if (data?.session) {
+        toast({ title: "Account created! 🎉", description: "Welcome to LabSetu" });
+        navigate(selectedRole === "lab_partner" ? "/lab-dashboard" : "/my-bookings");
+      } else {
+        setMode("verify");
+      }
     }
   };
 
   const handleForgot = async (e: React.FormEvent) => {
     e.preventDefault();
+    const cleanEmail = email.trim().toLowerCase();
     setLoading(true);
-    const { error } = await resetPassword(email);
+    const { error } = await resetPassword(cleanEmail);
     setLoading(false);
     if (error) {
       toast({ title: "Failed", description: error.message, variant: "destructive" });
@@ -83,20 +144,40 @@ const Login = () => {
     }
   };
 
+  const handleResend = async (targetEmail?: string) => {
+    const toSend = (targetEmail || email || unconfirmedEmail || "").trim().toLowerCase();
+    if (!toSend) {
+      toast({ title: "Email required", description: "Please enter your email to resend confirmation.", variant: "destructive" });
+      return;
+    }
+    setResending(true);
+    const { error } = await resendVerificationEmail(toSend);
+    setResending(false);
+    if (error) {
+      toast({ title: "Resend failed", description: error.message, variant: "destructive" });
+    } else {
+      toast({ title: "Verification email sent", description: `Check inbox for ${toSend}` });
+    }
+  };
+
   const handleSendOtp = async () => {
-    if (!phone || phone.length < 10) {
-      toast({ title: "Enter a valid phone number", variant: "destructive" });
+    const cleanPhone = phone.replace(/\D/g, "").slice(-10);
+    if (!cleanPhone || cleanPhone.length < 10) {
+      toast({ title: "Enter a valid phone number", description: "Please provide a 10-digit number", variant: "destructive" });
       return;
     }
     setLoading(true);
     try {
       const { data, error } = await supabase.functions.invoke("send-otp", {
-        body: { phone: phone.replace(/\D/g, "").slice(-10) },
+        body: { phone: cleanPhone },
       });
       if (error) throw error;
       setOtpSent(true);
       setOtpMode(data?.mode === "live" ? "live" : "test");
-      toast({ title: "OTP Sent!", description: data?.mode === "test" ? "Test mode: use 123456" : "Check your phone for OTP" });
+      toast({
+        title: "OTP Sent!",
+        description: data?.mode === "test" ? "Test mode: use 123456" : "Check your phone for OTP",
+      });
     } catch (err: any) {
       toast({ title: "Failed to send OTP", description: err.message, variant: "destructive" });
     }
@@ -105,29 +186,24 @@ const Login = () => {
 
   const handleVerifyOtp = async () => {
     if (otp.length < 6) return;
+    const cleanPhone = phone.replace(/\D/g, "").slice(-10);
     setLoading(true);
     try {
       const { data, error } = await supabase.functions.invoke("verify-otp", {
-        body: { phone: phone.replace(/\D/g, "").slice(-10), otp },
+        body: { phone: cleanPhone, otp },
       });
       if (error) throw error;
-      if (data?.verified) {
+
+      if (data?.session) {
+        await supabase.auth.setSession(data.session);
         toast({ title: "Phone verified! 🎉" });
-        // For OTP login, we sign in with a phone-email convention
-        const phoneEmail = `${phone.replace(/\D/g, "").slice(-10)}@labsetu.phone`;
-        const { error: signInErr } = await signIn(phoneEmail, `otp_${phone.replace(/\D/g, "").slice(-10)}`);
-        if (signInErr) {
-          // Try signup first if doesn't exist
-          await signUp(phoneEmail, `otp_${phone.replace(/\D/g, "").slice(-10)}`, `User ${phone.slice(-4)}`, "patient");
-          const { error: retryErr } = await signIn(phoneEmail, `otp_${phone.replace(/\D/g, "").slice(-10)}`);
-          if (retryErr) {
-            toast({ title: "Login failed", description: "Phone login error. Try email instead.", variant: "destructive" });
-          } else {
-            navigate("/");
-          }
-        } else {
-          navigate("/");
-        }
+        navigate("/");
+        return;
+      }
+
+      if (data?.success || data?.verified) {
+        toast({ title: "Phone verified! 🎉" });
+        navigate("/");
       } else {
         toast({ title: "Invalid OTP", description: data?.error || "Please try again", variant: "destructive" });
       }
@@ -141,13 +217,29 @@ const Login = () => {
     return (
       <div className="flex min-h-screen items-center justify-center bg-background px-4">
         <Card className="w-full max-w-sm border-0 shadow-lg">
-          <CardContent className="p-8 text-center">
-            <CheckCircle className="mx-auto mb-4 h-14 w-14 text-primary" />
-            <h2 className="mb-2 font-display text-xl font-bold">Check your email</h2>
-            <p className="mb-6 text-sm text-muted-foreground">
+          <CardContent className="p-8 text-center space-y-4">
+            <CheckCircle className="mx-auto mb-2 h-14 w-14 text-primary" />
+            <h2 className="font-display text-xl font-bold">Check your email</h2>
+            <p className="text-sm text-muted-foreground">
               We've sent a verification link to <strong>{email}</strong>. Click the link to activate your account.
             </p>
-            <Button variant="outline" className="w-full" onClick={() => setMode("login")}>
+            <Button
+              variant="outline"
+              className="w-full h-9 text-xs"
+              onClick={() => handleResend(email)}
+              disabled={resending}
+            >
+              {resending ? (
+                <>
+                  <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" /> Resending...
+                </>
+              ) : (
+                <>
+                  <RefreshCw className="mr-2 h-3.5 w-3.5" /> Resend verification email
+                </>
+              )}
+            </Button>
+            <Button variant="ghost" className="w-full h-9 text-xs" onClick={() => setMode("login")}>
               <ArrowLeft className="mr-2 h-4 w-4" /> Back to Login
             </Button>
           </CardContent>
@@ -182,7 +274,16 @@ const Login = () => {
                 <Label htmlFor="email" className="text-xs">Email</Label>
                 <div className="relative">
                   <Mail className="absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
-                  <Input id="email" type="email" placeholder="you@example.com" value={email} onChange={(e) => setEmail(e.target.value)} required className="h-9 pl-8 text-sm" autoFocus />
+                  <Input
+                    id="email"
+                    type="email"
+                    placeholder="you@gmail.com"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    required
+                    className="h-9 pl-8 text-sm"
+                    autoFocus
+                  />
                 </div>
               </div>
               <Button type="submit" className="w-full h-9 text-sm" disabled={loading}>
@@ -206,7 +307,15 @@ const Login = () => {
                       <Label htmlFor="loginEmail" className="text-xs">Email</Label>
                       <div className="relative">
                         <Mail className="absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
-                        <Input id="loginEmail" type="email" placeholder="you@example.com" value={email} onChange={(e) => setEmail(e.target.value)} required className="h-9 pl-8 text-sm" />
+                        <Input
+                          id="loginEmail"
+                          type="email"
+                          placeholder="you@gmail.com"
+                          value={email}
+                          onChange={(e) => setEmail(e.target.value)}
+                          required
+                          className="h-9 pl-8 text-sm"
+                        />
                       </div>
                     </div>
                     <div className="space-y-1.5">
@@ -218,9 +327,35 @@ const Login = () => {
                       </div>
                       <div className="relative">
                         <Lock className="absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
-                        <Input id="loginPassword" type="password" placeholder="••••••••" value={password} onChange={(e) => setPassword(e.target.value)} required minLength={6} className="h-9 pl-8 text-sm" />
+                        <Input
+                          id="loginPassword"
+                          type="password"
+                          placeholder="••••••••"
+                          value={password}
+                          onChange={(e) => setPassword(e.target.value)}
+                          required
+                          minLength={6}
+                          className="h-9 pl-8 text-sm"
+                        />
                       </div>
                     </div>
+
+                    {unconfirmedEmail && (
+                      <div className="rounded-md bg-amber-50 dark:bg-amber-950/40 p-2.5 border border-amber-200 dark:border-amber-800 text-xs text-amber-800 dark:text-amber-200 flex items-center justify-between gap-2">
+                        <span>Email not verified yet?</span>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          className="h-7 text-xs px-2 shrink-0 border-amber-300 dark:border-amber-700"
+                          onClick={() => handleResend(unconfirmedEmail)}
+                          disabled={resending}
+                        >
+                          {resending ? <Loader2 className="h-3 w-3 animate-spin" /> : "Resend Link"}
+                        </Button>
+                      </div>
+                    )}
+
                     <Button type="submit" className="w-full h-9 text-sm" disabled={loading}>
                       {loading ? <><Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" /> Signing in...</> : "Sign In"}
                     </Button>
@@ -234,7 +369,13 @@ const Login = () => {
                         <Label className="text-xs">Phone Number</Label>
                         <div className="relative">
                           <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">+91</span>
-                          <Input placeholder="Enter 10-digit number" value={phone} onChange={(e) => setPhone(e.target.value)} className="h-9 pl-10 text-sm" maxLength={10} />
+                          <Input
+                            placeholder="Enter 10-digit number"
+                            value={phone}
+                            onChange={(e) => setPhone(e.target.value)}
+                            className="h-9 pl-10 text-sm"
+                            maxLength={10}
+                          />
                         </div>
                       </div>
                       <Button className="w-full h-9 text-sm" onClick={handleSendOtp} disabled={loading}>
@@ -310,7 +451,14 @@ const Login = () => {
                 <Label htmlFor="fullName" className="text-xs">Full Name</Label>
                 <div className="relative">
                   <User className="absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
-                  <Input id="fullName" placeholder="Your full name" value={fullName} onChange={(e) => setFullName(e.target.value)} required className="h-9 pl-8 text-sm" />
+                  <Input
+                    id="fullName"
+                    placeholder="Your full name"
+                    value={fullName}
+                    onChange={(e) => setFullName(e.target.value)}
+                    required
+                    className="h-9 pl-8 text-sm"
+                  />
                 </div>
               </div>
 
@@ -318,7 +466,15 @@ const Login = () => {
                 <Label htmlFor="signupEmail" className="text-xs">Email</Label>
                 <div className="relative">
                   <Mail className="absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
-                  <Input id="signupEmail" type="email" placeholder="you@example.com" value={email} onChange={(e) => setEmail(e.target.value)} required className="h-9 pl-8 text-sm" />
+                  <Input
+                    id="signupEmail"
+                    type="email"
+                    placeholder="you@gmail.com"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    required
+                    className="h-9 pl-8 text-sm"
+                  />
                 </div>
               </div>
 
@@ -326,7 +482,16 @@ const Login = () => {
                 <Label htmlFor="signupPassword" className="text-xs">Password</Label>
                 <div className="relative">
                   <Lock className="absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
-                  <Input id="signupPassword" type="password" placeholder="••••••••" value={password} onChange={(e) => setPassword(e.target.value)} required minLength={6} className="h-9 pl-8 text-sm" />
+                  <Input
+                    id="signupPassword"
+                    type="password"
+                    placeholder="••••••••"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    required
+                    minLength={6}
+                    className="h-9 pl-8 text-sm"
+                  />
                 </div>
               </div>
 

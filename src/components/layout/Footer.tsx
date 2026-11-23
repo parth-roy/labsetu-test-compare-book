@@ -8,8 +8,8 @@ const Footer = () => {
       <div className="container py-10">
         <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-4">
           <div>
-            <Link to="/">
-              <img src={labsetuLogo} alt="LabSetu" className="h-8 w-auto" />
+            <Link to="/" className="inline-block">
+              <img src={labsetuLogo} alt="LabSetu" className="h-9 sm:h-10 w-auto object-contain" />
             </Link>
             <p className="mt-3 text-xs text-muted-foreground leading-relaxed">
               India's trusted platform for comparing diagnostic labs and booking tests at the best prices. All partner labs are NABL certified.
